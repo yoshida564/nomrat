@@ -76,6 +76,7 @@ var XMLHttpRequest = require('xhr2')
 
 var controller = Botkit.slackbot({
     debug: true,
+    retry: 100,
 });
 
 var bot = controller.spawn({
@@ -104,6 +105,12 @@ var bot = controller.spawn({
 //         }
 //     });
 // });
+
+controller.hears([''],'rtm_close',function(bot, message) {
+    bot = controller.spawn({
+        token: ConfigFile.token
+    }).startRTM();
+});
 
 controller.hears(['call me (.*)'],'direct_message,direct_mention,mention',function(bot, message) {
     var matches = message.text.match(/call me (.*)/i);
@@ -177,6 +184,7 @@ controller.hears([''],'ambient,file_share',function(bot, message) {
             console.log(message.file)
             const request = require('request');
             var fs = require('fs');
+            var dir_path = __dirname + '/img/'
             var url = message.file.url_private_download
             var pinatra = ConfigFile.pinatra
             request(
@@ -184,12 +192,12 @@ controller.hears([''],'ambient,file_share',function(bot, message) {
                 function (error, response, body){
                     if(!error && response.statusCode === 200){
                         var binary = body;
-                        fs.writeFileSync('./img/'+message.file.name.replace(/\s/g, "_"), body, 'binary');
+                        fs.writeFileSync(dir_path + message.file.name.replace(/\s/g, "_"), body, 'binary');
                         var album_id = ConfigFile.album_id.auto_buckup
                         var exec = require('child_process').exec;
                         var cmd;
                         cmd = 'curl ' +
-                            '-F file1=@./img/'+ message.file.name.replace(/\s/g, "_") +
+                            '-F file1=@'+ dir_path + message.file.name.replace(/\s/g, "_") +
                             " " + pinatra + '/' + album_id + '/photo/new';
                         execCmd = function() {
                             return exec(cmd, {timeout: 100000},
@@ -202,7 +210,7 @@ controller.hears([''],'ambient,file_share',function(bot, message) {
                                             if(stdout !== null) {
                                                 var res = JSON.parse(stdout)
                                                 bot.reply(message,'Successfully uploaded: ' + res[0]["title"] + "\n" + res[0]["src"]);
-                                                fs.unlink('./img/'+message.file.name.replace(/\s/g, "_"), function (err) {
+                                                fs.unlink(dir_path + message.file.name.replace(/\s/g, "_"), function (err) {
                                                     if (err) throw err;
                                                     console.log('successfully deleted '+message.file.name.replace(/\s/g, "_"));
                                                 });

@@ -38,13 +38,13 @@ This bot demonstrates a multi-stage conversation
   
   Say where you want it delivered.
   
-  The bot will reply "Ok! Good by."
+  The bot will reply "Ok! Goodbye."
   
   ...and will refrain from billing your card because this is just a demo :P
 
 # EXTEND THE BOT:
 
-  Botkit is has many features for building cool and useful bots!
+  Botkit has many features for building cool and useful bots!
 
   Read all about it here:
 
@@ -52,7 +52,7 @@ This bot demonstrates a multi-stage conversation
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-var Botkit = require('../lib/Botkit.js');
+var Botkit = require('../../lib/Botkit.js');
 
 if (!process.env.token) {
   console.log('Error: Specify token in environment');
@@ -71,7 +71,7 @@ controller.spawn({
   }
 });
 
-controller.hears(['pizzatime'],['ambient'],function(bot,message) {
+controller.hears(['pizzatime'],['ambient','direct_message'],function(bot,message) {
   bot.startConversation(message, askFlavor);
 });
 
@@ -91,7 +91,7 @@ askSize = function(response, convo) {
 }
 askWhereDeliver = function(response, convo) { 
   convo.ask("So where do you want it delivered?", function(response, convo) {
-    convo.say("Ok! Good by.");
+    convo.say("Ok! Goodbye.");
     convo.next();
   });
 }

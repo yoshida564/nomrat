@@ -1,22 +1,127 @@
-# [Botkit](http://howdy.ai/botkit) - Building Blocks for Building Bots
+# [Botkit](https://botkit.ai) - Building Blocks for Building Bots
 
 [![npm](https://img.shields.io/npm/v/botkit.svg)](https://www.npmjs.com/package/botkit)
 [![David](https://img.shields.io/david/howdyai/botkit.svg)](https://david-dm.org/howdyai/botkit)
 [![npm](https://img.shields.io/npm/l/botkit.svg)](https://spdx.org/licenses/MIT)
+[![bitHound Overall Score](https://www.bithound.io/github/howdyai/botkit/badges/score.svg)](https://www.bithound.io/github/howdyai/botkit)
 
-Botkit designed to ease the process of designing and running useful, creative or just plain weird bots (and other types of applications) that live inside [Slack](http://slack.com)!
+Botkit is designed to ease the process of designing and running useful, creative bots that live inside messaging platforms.
+Bots are applications that can send and receive messages, and in many cases, appear alongside their human counterparts as _users._
 
-It provides a semantic interface to sending and receiving messages
-so that developers can focus on creating novel applications and experiences
-instead of dealing with API endpoints.
+Some bots talk like people, others silently work in the background, while others present interfaces much like modern mobile applications.
+Botkit gives developers the necessary tools for building bots of any kind! It provides an easy-to-understand interface for sending and receiving messages so that developers can focus on creating novel applications and experiences instead of dealing with API endpoints.
 
-Botkit features a comprehensive set of tools
-to deal with [Slack's integration platform](http://api.slack.com), and allows
-developers to build both custom integrations for their
-team, as well as public "Slack Button" applications that can be
-run from a central location, and be used by many teams at the same time.
+Our goal with Botkit is to make bot building easy, fun, and accessible to anyone with the desire to create
+a future filled with talking machines! We provide several tools to make this vision a reality:
 
-## Installation
+* [Botkit Studio](#start-with-botkit-studio), an integrated development environment for designing and building bots
+* [Starter Kits](#start-with-a-starter-kit), boilerplate applications pre-configured to work with popular platforms
+* [Botkit Core Library](#botkit-core-library), an SDK for creating conversational software
+* [Plugins and Middlewares](docs/readme-middlewares.md) that can extend and enhance your bot
+
+Botkit features a comprehensive set of tools to deal with popular messaging platforms, including:
+
+* [Slack](docs/readme-slack.md)
+* [Cisco Spark](docs/readme-ciscospark.md)
+* [Microsoft Teams](docs/readme-teams.md)
+* [Facebook Messenger and Facebook @Workplace](docs/readme-facebook.md)
+* [Twilio SMS Messaging](docs/readme-twiliosms.md)
+* [Twilio IP Messaging](docs/readme-twilioipm.md)
+* [Microsoft Bot Framework](docs/readme-botframework.md)
+* Yours? [info@howdy.ai](mailto:info@howdy.ai)
+
+---
+
+## [Start with Botkit Studio](https://studio.botkit.ai/signup)
+
+Botkit Studio is a hosted development environment for building bots with Botkit.
+Developers using Botkit Studio get the full capabilities of Botkit, with the addition of many powerful bot-building features such as:
+
+* All the code you need to get your bot online in minutes
+* A visual authoring environment for designing and managing dialog
+* A real-time message console for monitoring activity
+* APIs that enable content and features to be added to bots without additional code
+* Role-based, multi-user teams support
+* Detailed usage statistics
+* Built-in integrations with top plugins and platform tools
+
+Click below to sign up for a free developer account, [and please contact us if you have any questions.](mailto:info@howdy.ai)
+
+**[![Sign up for Botkit Studio](docs/studio.png)](https://studio.botkit.ai/signup?code=readme)**
+
+
+## Start with a Starter Kit
+
+Based on the best practices we've established since the release of Botkit, our starter kits include
+everything you need to bring a Botkit bot online in minutes. Don't start from scratch -- start with a
+well structured, extensible application boilerplate!
+
+These starter kits are easy to set up and run on your own hosting service, but the fastest (and cheapest) way to get
+started is to deploy directly to [Glitch](http://glitch.com), a free-to-use code editor and hosting system!
+
+Note: While [using Botkit Studio](https://studio.botkit.ai) is highly recommended, these starter kits can be used without registering for Studio as well.
+
+> ### [Slack Bot Starter Kit](https://github.com/howdyai/botkit-starter-slack)
+> The Slack starter kit contains everything you need to create a multi-team Slack application,
+suitable for internal use or submission to [Slack's app store.](https://slack.com/apps)
+> #### [![Remix on Glitch](docs/glitch.png)](https://glitch.com/~botkit-slack)
+
+> ### [Cisco Spark Bot Starter Kit](https://github.com/howdyai/botkit-starter-ciscospark)
+> Build a bot inside Cisco Spark's collaboration and messaging platform. Bots built with the starter kit
+are ready to submit to [Cisco Spark's Depot app store](https://depot.ciscospark.com/).
+> #### [![Remix on Glitch](docs/glitch.png)](https://glitch.com/~botkit-ciscospark)
+
+> ### [Microsoft Teams Bot Starter Kit](https://github.com/howdyai/botkit-starter-teams)
+> Connect your bot to Microsoft Teams, and it can do things like no other bot, like create tabs, compose extensions, and other deep integrations into the messaging UI.
+> #### [![Remix on Glitch](docs/glitch.png)](https://glitch.com/~botkit-teams)
+
+> ### [Facebook Bot Starter Kit](https://github.com/howdyai/botkit-starter-facebook)
+> The Facebook starter kit contains all the code necessary to stand up a Facebook bot on either Facebook Messenger, or Facebook Work Chat. With just a few pieces of configuration, set up a bot that automatically responds to messages sent to your Facebook page.
+> #### [![Remix on Glitch](docs/glitch.png)](https://glitch.com/~botkit-facebook)
+
+# Developer & Support Community
+
+Join our thriving community of Botkit developers and bot enthusiasts at large.
+Over 4500 members strong, [our open Slack group](https://community.botkit.ai) is
+_the place_ for people interested in the art and science of making bots.
+Come to ask questions, share your progress, and commune with your peers!
+
+You can also find help from members of the Botkit team [in our dedicated Cisco Spark room](https://eurl.io/#SyNZuomKx)!
+
+We also host a [regular meetup and annual conference called TALKABOT.](https://talkabot.ai)
+Come meet and learn from other bot developers! [Full video of our 2016 event is available on Youtube.](https://www.youtube.com/playlist?list=PLD3JNfKLDs7WsEHSal2cfwG0Fex7A6aok)
+
+
+
+# Botkit Core Library
+
+Botkit is designed around the idea of giving developers a language-like interface for building bots.
+Instead of dealing directly with messaging platform protocols and APIs, Botkit provides semantic functions
+designed around the normal parts of human conversation: _hearing things_ and _saying things_.
+
+On top of these basic build blocks, Botkit offers a powerful system for creating and managing dynamic
+conversational interfaces, and tapping into cutting edge technology like artificial intelligence (AI)
+and natural language understanding (NLP/NLU) tools.
+
+Practically speaking, this results in code that looks like this:
+
+```javascript
+// respond when a user sends a DM to the bot that says "hello"
+controller.hears('hello', 'direct_message', function(bot, message) {
+    bot.reply(message, 'Hello human.');
+});
+```
+
+All Botkit bots, built for any platform, use these same building blocks. This means developers are not required
+to learn the intricacies of each platform, and can build bots that port easily between them.
+
+Botkit can be used to build a stand-alone application, or it can be integrated into existing Node.js
+apps to offer a bot experience, or to send application notifications into messaging apps. It is released
+under the [MIT open source license](LICENSE.md), which means developers are free to use it any way they choose,
+in any type of project.
+
+
+## Install Botkit from NPM or Github
 
 Botkit is available via NPM.
 
@@ -41,1143 +146,52 @@ Use the `--production` flag to skip the installation of devDependencies from Bot
 npm install --production
 ```
 
+## Running Tests
 
-## Getting Started
+To run tests, use the npm `test` command. Note: you will need dev dependencies installed using `npm install`.
 
-1) Install Botkit. See [Installation](#installation) instructions.
-
-2) First make a bot integration inside of your Slack channel. Go here:
-
-https://my.slack.com/services/new/bot
-
-Enter a name for your bot.
-Make it something fun and friendly, but avoid a single task specific name.
-Bots can do lots! Let's not pigeonhole them.
-
-3) When you click "Add Bot Integration", you are taken to a page where you can add additional details about your bot, like an avatar, as well as customize its name & description.
-
-Copy the API token that Slack gives you. You'll need it.
-
-4) Run the example bot app, using the token you just copied:
-​
-```
-token=REPLACE_THIS_WITH_YOUR_TOKEN node bot.js
-```
-​
-5) Your bot should be online! Within Slack, send it a quick direct message to say hello. It should say hello back!
-
-Try:
-  * who are you?
-  * call me Bob
-  * shutdown
-​
-
-### Things to note
-​
-Much like a vampire, a bot has to be invited into a channel. DO NOT WORRY bots are not vampires.
-
-Type: `/invite @<my bot>` to invite your bot into another channel.
-
-
-## Core Concepts
-
-Bots built with Botkit have a few key capabilities, which can be used
-to create clever, conversational applications. These capabilities
-map to the way real human people talk to each other.
-
-Bots can [hear things](#receiving-messages). Bots can [say things and reply](#sending-messages) to what they hear.
-
-With these two building blocks, almost any type of conversation can be created.
-
-To organize the things a bot says and does into useful units, Botkit bots have a subsystem available for managing [multi-message conversations](#multi-message-replies-to-incoming-messages). Conversations add features like the ability to ask a question, queue several messages at once, and track when an interaction has ended.  Handy!
-
-After a bot has been told what to listen for and how to respond,
-it is ready to be connected to a stream of incoming messages. Currently, Botkit can handle [3 different types of incoming messages from Slack](#connecting-your-bot-to-slack).
-
-
-## Basic Usage
-
-Here's an example of using Botkit with Slack's [real time API](https://api.slack.com/rtm), which is the coolest one because your bot will look and act like a real user inside Slack.
-
-This sample bot listens for the word "hello" to be said to it -- either as a direct mention ("@bot hello") or an indirect mention ("hello @bot") or a direct message (a private message inside Slack between the user and the bot).
-
-The Botkit constructor returns a `controller` object. By attaching event handlers
-to the controller object, developers can specify what their bot should look for and respond to,
-including keywords, patterns and various [messaging and status events](#responding-to-events).
-These event handlers can be thought of metaphorically as skills or features the robot brain has -- each event handler defines a new "When a human say THIS the bot does THAT."
-
-The `controller` object is then used to `spawn()` bot instances that represent
-a specific bot identity and connection to Slack. Once spawned and connected to
-the API, the bot user will appear online in Slack, and can then be used to
-send messages and conduct conversations with users. They are called into action by the `controller` when firing event handlers.
-
-
-```javascript
-var Botkit = require('botkit');
-
-var controller = Botkit.slackbot({
-  debug: false
-  //include "log: false" to disable logging
-  //or a "logLevel" integer from 0 to 7 to adjust logging verbosity
-});
-
-// connect the bot to a stream of messages
-controller.spawn({
-  token: <my_slack_bot_token>,
-}).startRTM()
-
-// give the bot something to listen for.
-controller.hears('hello',['direct_message','direct_mention','mention'],function(bot,message) {
-
-  bot.reply(message,'Hello yourself.');
-
-});
-
+```bash
+npm test
 ```
 
-## Included Examples
+To run tests in watch mode run:
 
-These examples are included in the Botkit [Github repo](https://github.com/howdyai/botkit).
-
-[bot.js](https://github.com/howdyai/botkit/blob/master/bot.js) An example bot that can be connected to your team. Useful as a basis for creating your first bot!
-
-[examples/demo_bot.js](https://github.com/howdyai/botkit/blob/master/examples/demo_bot.js) another example bot that uses different ways to send and receive messages.
-
-[examples/slackbutton_bot.js](https://github.com/howdyai/botkit/blob/master/examples/slackbutton_bot.js) an example of using the Slack Button to offer a bot integration.
-
-[examples/slackbutton_incomingwebhooks.js](https://github.com/howdyai/botkit/blob/master/examples/slackbutton_incomingwebhooks.js) an example of using the Slack Button to offer an incoming webhook integration. This example also includes a simple form which allows you to broadcast a message to any team who adds the integration.
-
-[example/sentiment_analysis.js](https://github.com/howdyai/botkit/blob/master/examples/sentiment_analysis.js) a simple example of a chatbot using sentiment analysis. Keeps a running score of each user based on positive and negative keywords. Messages and thresholds can be configured. 
-
-# Developing with Botkit
-
-Table of Contents
-
-* [Connecting Your Bot To Slack](#connecting-your-bot-to-slack)
-* [Receiving Messages](#receiving-messages)
-* [Sending Messages](#sending-messages)
-* [Working with Slack Integrations](#working-with-slack-integrations)
-* [Advanced Topics](#advanced-topics)
-
-## Connecting Your Bot to Slack
-
-Bot users connect to Slack using a real time API based on web sockets.
-The bot connects to Slack using the same protocol that the native Slack clients use!
-
-To connect a bot to Slack, [get a Bot API token from the Slack integrations page](https://my.slack.com/services/new/bot).
-
-Note: Since API tokens can be used to connect to your team's Slack, it is best practices to handle API tokens with caution. For example, pass tokens in to your application via evironment variable or command line parameter rather than include it in the code itself.
-This is particularly true if you store and use API tokens on behalf of users other than yourself!
-
-[Read Slack's Bot User documentation](https://api.slack.com/bot-users)
-
-#### controller.spawn()
-| Argument | Description
-|--- |---
-| config | Incoming message object
-
-Spawn an instance of your bot and connect it to Slack.
-This function takes a configuration object which should contain
-at least one method of talking to the Slack API.
-
-To use the real time / bot user API, pass in a token, preferably via
-an environment variable.
-
-Controllers can also spawn bots that use [incoming webhooks](#incoming-webhooks).
-
-#### bot.startRTM()
-| Argument | Description
-|--- |---
-| callback | _Optional_ Callback in the form function(err,bot,payload) { ... }
-
-Opens a connection to Slack's real time API. This connection will remain
-open until it fails or is closed using `closeRTM()`.
-
-The optional callback function receives:
-
-* Any error that occurred while connecting to Slack
-* An updated bot object
-* The resulting JSON payload of the Slack API command [rtm.start](https://api.slack.com/methods/rtm.start)
-
-The payload that this callback function receives contains a wealth of information
-about the bot and its environment, including a complete list of the users
-and channels visible to the bot. This information should be cached and used
-when possible instead of calling Slack's API.
-
-A successful connection the API will also cause a `rtm_open` event to be
-fired on the `controller` object.
-
-
-#### bot.closeRTM()
-
-Close the connection to the RTM. Once closed, an `rtm_close` event is fired
-on the `controller` object.
-
-
-```javascript
-var Botkit = require('Botkit');
-
-var controller = Botkit.slackbot();
-
-var bot = controller.spawn({
-  token: my_slack_bot_token
-})
-
-bot.startRTM(function(err,bot,payload) {
-  if (err) {
-    throw new Error('Could not connect to Slack');
-  }
-});
+```bash
+npm run test-watch
 ```
 
-### Responding to events
+Tests are run with [Jest](https://facebook.github.io/jest/docs/getting-started.html). You can pass Jest command line options after a `--`.
+For example to have Jest bail on the first error you can run
 
-Once connected to Slack, bots receive a constant stream of events - everything from the normal messages you would expect to typing notifications and presence change events.
-
-Botkit's message parsing and event system does a great deal of filtering on this
-real time stream so developers do not need to parse every message.  See [Receiving Messages](#receiving-messages)
-for more information about listening for and responding to messages.
-
-It is also possible to bind event handlers directly to any of the enormous number of native Slack events, as well as a handful of custom events emitted by Botkit.
-
-You can receive and handle any of the [native events thrown by slack](https://api.slack.com/events).
-
-```javascript
-controller.on('channel_joined',function(bot,message) {
-
-  // message contains data sent by slack
-  // in this case:
-  // https://api.slack.com/events/channel_joined
-
-});
+```bash
+npm test -- --bail
 ```
 
-You can also receive and handle a long list of additional events caused
-by messages that contain a subtype field, [as listed here](https://api.slack.com/events/message)
-
-```javascript
-controller.on('channel_leave',function(bot,message) {
-
-  // message format matches this:
-  // https://api.slack.com/events/message/channel_leave
-
-})
-```
-
-Finally, Botkit throws a handful of its own events!
-Events related to the general operation of bots are below.
-When used in conjunction with the Slack Button, Botkit also fires
-a [few additional events](#using-the-slack-button).
-
-#### Message/User Activity Events:
-
-| Event | Description
-|--- |---
-| message_received | a message was received by the bot
-| bot_channel_join | the bot has joined a channel
-| user_channel_join | a user has joined a channel
-| bot_group_join | the bot has joined a group
-| user_group_join | a user has joined a group
-| direct_message | the bot received a direct message from a user
-| direct_mention | the bot was addressed directly in a channel
-| mention | the bot was mentioned by someone in a message
-| ambient | the message received had no mention of the bot
-
-
-#### Websocket Events:
-
-| Event | Description
-|--- |---
-| rtm_open | a connection has been made to the RTM api
-| rtm_close | a connection to the RTM api has closed
-
-
-## Receiving Messages
-
-Botkit bots receive messages through a system of event handlers. Handlers can be set up to respond to specific types of messages,
-or to messages that match a given keyword or pattern.
-
-For Slack, Botkit supports five type of message event:
-
-| Event | Description
-|--- |---
-| message_received  | This event is fired for any message of any kind that is received and can be used as a catch all
-| ambient | Ambient messages are messages that the bot can hear in a channel, but that do not mention the bot in any way
-| direct_mention| Direct mentions are messages that begin with the bot's name, as in "@bot hello"
-| mention | Mentions are messages that contain the bot's name, but not at the beginning, as in "hello @bot"
-| direct_message | Direct messages are sent via private 1:1 direct message channels
-
-These message events can be handled using by attaching an event handler to the main controller object.
-These event handlers take two parameters: the name of the event, and a callback function which is invoked whenever the event occurs.
-The callback function receives a bot object, which can be used to respond to the message, and a message object.
-
-```javascript
-// reply to @bot hello
-controller.on('direct_mention',function(bot,message) {
-
-  // reply to _message_ by using the _bot_ object
-  bot.reply(message,'I heard you mention me!');
-
-});
-
-// reply to a direct message
-controller.on('direct_message',function(bot,message) {
-
-  // reply to _message_ by using the _bot_ object
-  bot.reply(message,'You are talking directly to me');
-
-});
-
-```
-
-### Matching Patterns and Keywords with `hears()`
-
-In addition to these traditional event handlers, Botkit also provides the `hears()` function,
-which configures event handlers based on matching specific keywords or phrases in the message text.
-The hears function works just like the other event handlers, but takes a third parameter which
-specifies the keywords to match.
-
-| Argument | Description
-|--- |---
-| patterns | An _array_ or a _comma separated string_ containing a list of regular expressions to match
-| types  | An _array_ or a _comma separated string_ of the message events in which to look for the patterns
-| callback | callback function that receives a message object
-
-```javascript
-controller.hears(['keyword','^pattern$'],['direct_message','direct_mention','mention','ambient'],function(bot,message) {
-
-  // do something to respond to message
-  // all of the fields available in a normal Slack message object are available
-  // https://api.slack.com/events/message
-  bot.reply(message,'You used a keyword!');
-
-});
-```
-For example,
-
-```javascript
-controller.hears('open the (.*) doors',['direct_message','mention'],function(bot,message) {
-  var doorType = message.match[1]; //match[1] is the (.*) group. match[0] is the entire group (open the (.*) doors).
-  if (doorType === 'pod bay') {
-    return bot.reply(message, 'I\'m sorry, Dave. I\'m afraid I can\'t do that.');
-  }
-  return bot.reply(message, 'Okay');
-});
-```
-
-## Sending Messages
-
-Bots have to send messages to deliver information and present an interface for their
-functionality.  Botkit bots can send messages in several different ways, depending
-on the type and number of messages that will be sent.
-
-Single message replies to incoming commands can be sent using the `bot.reply()` function.
-
-Multi-message replies, particularly those that present questions for the end user to respond to,
-can be sent using the `bot.startConversation()` function and the related conversation sub-functions.
-
-Bots can originate messages - that is, send a message based on some internal logic or external stimulus -
-using `bot.say()` method.  Note that bots that do not need to respond to messages or hold conversations
-may be better served by using Slack's [Incoming Webhooks](#incoming-webhooks) feature.
-
-### Single Message Replies to Incoming Messages
-
-Once a bot has received a message using a `on()` or `hears()` event handler, a response
-can be sent using `bot.reply()`.
-
-Messages sent using `bot.reply()` are sent immediately. If multiple messages are sent via
-`bot.reply()` in a single event handler, they will arrive in the Slack client very quickly
-and may be difficult for the user to process. We recommend using `bot.startConversation()`
-if more than one message needs to be sent.
-
-You may pass either a string, or a message object to the function. Message objects may contain
-any of the fields supported by [Slack's chat.postMessage](https://api.slack.com/methods/chat.postMessage) API.
-
-#### bot.reply()
-
-| Argument | Description
-|--- |---
-| message | Incoming message object
-| reply | _String_ or _Object_ Outgoing response
-| callback | _Optional_ Callback in the form function(err,response) { ... }
-
-```javascript
-controller.hears(['keyword','^pattern$'],['direct_message','direct_mention','mention'],function(bot,message) {
-
-  // do something to respond to message
-  // ...
-
-  bot.reply(message,"Tell me more!");
-
-});
-
-controller.on('ambient',function(bot,message) {
-
-    // do something...
-
-    // then respond with a message object
-    bot.reply(message,{
-      text: "A more complex response",
-      username: "ReplyBot",
-      icon_emoji: ":dash:",
-    });
-
-})
-
-//Using attachments
-controller.hears('another_keyword','direct_message,direct_mention',function(bot,message) {
-  var reply_with_attachments = {
-    'username': 'My bot' ,
-    'text': 'This is a pre-text',
-    'attachments': [
-      {
-        'fallback': 'To be useful, I need your to invite me in a channel.',
-        'title': 'How can I help you?',
-        'text': 'To be useful, I need your to invite me in a channel ',
-        'color': '#7CD197'
-      }
-    ],
-    'icon_url': 'http://lorempixel.com/48/48'
-    }
-
-  bot.reply(message, reply_with_attachments);
-});
-
-```
-
-### Multi-message Replies to Incoming Messages
-
-For more complex commands, multiple messages may be necessary to send a response,
-particularly if the bot needs to collect additional information from the user.
-
-Botkit provides a `Conversation` object type that is used to string together several
-messages, including questions for the user, into a cohesive unit. Botkit conversations
-provide useful methods that enable developers to craft complex conversational
-user interfaces that may span a several minutes of dialog with a user, without having to manage
-the complexity of connecting multiple incoming and outgoing messages across
-multiple API calls into a single function.
-
-Messages sent as part of a conversation are sent no faster than one message per second,
-which roughly simulates the time it would take for the bot to "type" the message.
-(It is possible to adjust this delay - see [special behaviors](#special-behaviors))
-
-### Start a Conversation
-
-#### bot.startConversation()
-| Argument | Description
-|---  |---
-| message   | incoming message to which the conversation is in response
-| callback  | a callback function in the form of  function(err,conversation) { ... }
-
-`startConversation()` is a function that creates conversation in response to an incoming message.
-The conversation will occur _in the same channel_ in which the incoming message was received.
-Only the user who sent the original incoming message will be able to respond to messages in the conversation.
-
-#### bot.startPrivateConversation()
-| Argument | Description
-|---  |---
-| message   | incoming message to which the conversation is in response
-| callback  | a callback function in the form of  function(err,conversation) { ... }
-
-`startPrivateConversation()` works juts like `startConversation()`, but the resulting
-conversation that is created will occur in a private direct message channel between
-the user and the bot.
-
-It is possible to initiate a private conversation by passing a message object, containing the user's Slack ID.
-
-```javascript
-//assume var user_id has been defined
-bot.startPrivateConversation({user: user_id}, function(response, convo){
-  convo.say('Hello, I am your bot.')
-})
-```
-
-
-### Control Conversation Flow
-
-#### conversation.say()
-| Argument | Description
-|---  |---
-| message   | String or message object
-
-Call convo.say() several times in a row to queue messages inside the conversation. Only one message will be sent at a time, in the order they are queued.
-
-```javascript
-controller.hears(['hello world'],['direct_message','direct_mention','mention','ambient'],function(bot,message) {
-
-  // start a conversation to handle this response.
-  bot.startConversation(message,function(err,convo) {
-
-    convo.say('Hello!');
-    convo.say('Have a nice day!');
-
-    //Using attachments
-    var message_with_attachments = {
-      'username': 'My bot' ,
-      'text': 'this is a pre-text',
-      'attachments': [
-        {
-          'fallback': 'To be useful, I need your to invite me in a channel.',
-          'title': 'How can I help you?',
-          'text': ' To be useful, I need your to invite me in a channel ',
-          'color': '#7CD197'
-        }
-      ],
-      'icon_url': 'http://lorempixel.com/48/48'
-      }
-
-      convo.say(message_with_attachments);
-    });
-
-  })
-});
-```
-
-#### conversation.ask()
-| Argument | Description
-|---  |---
-| message   | String or message object containing the question
-| callback _or_ array of callbacks   | callback function in the form function(response_message,conversation), or array of objects in the form ``{ pattern: regular_expression, callback: function(response_message,conversation) { ... } }``
-| capture_options | _Optional_ Object defining options for capturing the response
-
-When passed a callback function, conversation.ask will execute the callback function for any response.
-This allows the bot to respond to open ended questions, collect the responses, and handle them in whatever
-manner it needs to.
-
-When passed an array, the bot will look first for a matching pattern, and execute only the callback whose
-pattern is matched. This allows the bot to present multiple choice options, or to proceed
-only when a valid response has been received. At least one of the patterns in the array must be marked as the default option,
-which will be called should no other option match. Botkit comes pre-built with several useful patterns which can be used with this function. See [included utterances](#included-utterances)
-
-Callback functions passed to `ask()` receive two parameters - the first is a standard message object containing
-the user's response to the question. The second is a reference to the conversation itself.
-
-Note that in order to continue the conversation, `convo.next()` must be called by the callback function. This
-function tells Botkit to continue processing the conversation. If it is not called, the conversation will hang
-and never complete causing memory leaks and instability of your bot application!
-
-The optional third parameter `capture_options` can be used to define different behaviors for collecting the user's response.
-This object can contain the following fields:
-
-| Field | Description
-|--- |---
-| key | _String_ If set, the response will be stored and can be referenced using this key
-| multiple | _Boolean_ if true, support multi-line responses from the user (allow the user to respond several times and aggregate the response into a single multi-line value)
-
-##### Using conversation.ask with a callback:
-
-```javascript
-controller.hears(['question me'],['direct_message','direct_mention','mention','ambient'],function(bot,message) {
-
-  // start a conversation to handle this response.
-  bot.startConversation(message,function(err,convo) {
-
-    convo.ask('How are you?',function(response,convo) {
-
-      convo.say('Cool, you said: ' + response.text);
-      convo.next();
-
-    });
-
-  })
-
-});
-```
-
-##### Using conversation.ask with an array of callbacks:
-
-```javascript
-controller.hears(['question me'],['direct_message','direct_mention','mention','ambient'],function(bot,message) {
-
-  // start a conversation to handle this response.
-  bot.startConversation(message,function(err,convo) {
-
-    convo.ask('Shall we proceed Say YES, NO or DONE to quit.',[
-      {
-        pattern: 'done',
-        callback: function(response,convo) {
-          convo.say('OK you are done!');
-          convo.next();
-        }
-      },
-      {
-        pattern: bot.utterances.yes,
-        callback: function(response,convo) {
-          convo.say('Great! I will continue...');
-          // do something else...
-          convo.next();
-
-        }
-      },
-      {
-        pattern: bot.utterances.no,
-        callback: function(response,convo) {
-          convo.say('Perhaps later.');
-          // do something else...
-          convo.next();
-        }
-      },
-      {
-        default: true,
-        callback: function(response,convo) {
-          // just repeat the question
-          convo.repeat();
-          convo.next();
-        }
-      }
-    ]);
-
-  })
-
-});
-```
-
-##### Multi-stage conversations
-
-![multi-stage convo example](https://www.evernote.com/shard/s321/sh/7243cadf-be40-49cf-bfa2-b0f524176a65/f9257e2ff5ee6869/res/bc778282-64a5-429c-9f45-ea318c729225/screenshot.png?resizeSmall&width=832)
-
-The recommended way to have multi-stage conversations is with multiple functions
-which call eachother. Each function asks just one question. Example:
-
-```javascript
-controller.hears(['pizzatime'],['ambient'],function(bot,message) {
-  bot.startConversation(message, askFlavor);
-});
-
-askFlavor = function(response, convo) {
-  convo.ask('What flavor of pizza do you want?', function(response, convo) {
-    convo.say('Awesome.');
-    askSize(response, convo);
-    convo.next();
-  });
-}
-askSize = function(response, convo) {
-  convo.ask('What size do you want?', function(response, convo) {
-    convo.say('Ok.')
-    askWhereDeliver(response, convo);
-    convo.next();
-  });
-}
-askWhereDeliver = function(response, convo) {
-  convo.ask('So where do you want it delivered?', function(response, convo) {
-    convo.say('Ok! Good bye.');
-    convo.next();
-  });
-}
-```
-
-The full code for this example can be found in ```examples/convo_bot.js```.
-
-##### Included Utterances
-
-| Pattern Name | Description
-|--- |---
-| bot.utterances.yes | Matches phrases like yes, yeah, yup, ok and sure.
-| bot.utterances.no | Matches phrases like no, nah, nope
-
-##### Conversation Control Functions
-
-In order to direct the flow of the conversation, several helper functions
-are provided.  These functions should only be called from within a convo.ask
-handler function!
-
-`convo.sayFirst(message)` Works just like convo.say, but injects a message into the first spot in the queue
-so that it is sent immediately, before any other queued messages.
-
-`convo.stop()` end the conversation immediately, and set convo.status to `stopped`
-
-`convo.repeat()` repeat the last question sent and continue to wait for a response.
-
-`convo.silentRepeat()` simply wait for another response without saying anything.
-
-`convo.next()` proceed to the next message in the conversation.  *This must be called* at the end of each handler.
-
-### Handling End of Conversation
-
-Conversations trigger events during the course of their life.  Currently,
-only two events are fired, and only one is very useful: end.
-
-Conversations end naturally when the last message has been sent and no messages remain in the queue.
-In this case, the value of `convo.status` will be `completed`. Other values for this field include `active`, `stopped`, and
-`timeout`.
-
-```javascript
-convo.on('end',function(convo) {
-
-  if (convo.status=='completed') {
-    // do something useful with the users responses
-    var res = convo.extractResponses();
-
-    // reference a specific response by key
-    var value  = convo.extractResponse('key');
-
-    // ... do more stuff...
-
-  } else {
-    // something happened that caused the conversation to stop prematurely
-  }
-
-});
-```
-
-#### convo.extractResponses()
-
-Returns an object containing all of the responses a user sent during the course of a conversation.
-
-```javascript
-var values = convo.extractResponses();
-var value = values.key;
-```
-
-#### convo.extractResponse()
-
-Return one specific user response, identified by its key.
-
-```javascript
-var value  = convo.extractResponse('key');
-```
-
-### Originating Messages
-
-#### bot.say()
-| Argument | Description
-|--- |---
-| message | A message object
-| callback | _Optional_ Callback in the form function(err,response) { ... }
-
-Note: If your primary need is to spontaneously send messages rather than
-respond to incoming messages, you may want to use [Slack's incoming webhooks feature](#incoming-webhooks) rather than the real time API.
-
-```javascript
-bot.say(
-  {
-    text: 'my message text',
-    channel: 'C0H338YH4'
-  }
-);
-```
-
-## Working with Slack Integrations
-
-There are a dizzying number of ways to integrate your application into Slack.
-Up to this point, this document has mainly dealt with the real time / bot user
-integration.  In addition to this type of integration, Botkit also supports:
-
-* Incoming Webhooks - a way to send (but not receive) messages to Slack
-* Outgoing Webhooks - a way to receive messages from Slack based on a keyword or phrase
-* Slash Command - a way to add /slash commands to Slack
-* Slack Web API - a full set of RESTful API tools to deal with Slack
-* The Slack Button - a way to build Slack applications that can be used by multiple teams
-
-
-```javascript
-var Botkit = require('botkit');
-var controller = Botkit.slackbot({})
-
-var bot = controller.spawn({
-  token: my_slack_bot_token
-});
-
-// use RTM
-bot.startRTM(function(err,bot,payload) {
-  // handle errors...
-});
-
-// send webhooks
-bot.configureIncomingWebhook({url: webhook_url});
-bot.sendWebhook({
-  text: 'Hey!',
-  channel: '#testing',
-},function(err,res) {
-  // handle error
-});
-
-// receive outgoing or slash commands
-// if you are already using Express, you can use your own server instance...
-// see "Use BotKit with an Express web server"
-controller.setupWebserver(process.env.port,function(err,webserver) {
-
-  controller.createWebhookEndpoints(controller.webserver);
-
-});
-
-controller.on('slash_command',function(bot,message) {
-
-  // reply to slash command
-  bot.replyPublic(message,'Everyone can see the results of this slash command');
-
-});
-```
-
-
-
-### Incoming webhooks
-
-Incoming webhooks allow you to send data from your application into Slack.
-To configure Botkit to send an incoming webhook, first set one up
-via [Slack's integration page](https://my.slack.com/services/new/incoming-webhook/).
-
-Once configured, use the `sendWebhook` function to send messages to Slack.
-
-[Read official docs](https://api.slack.com/incoming-webhooks)
-
-#### bot.configureIncomingWebhook()
-| Argument | Description
-|--- |---
-| config | Configure a bot to send webhooks
-
-Add a webhook configuration to an already spawned bot.
-It is preferable to spawn the bot pre-configured, but hey, sometimes
-you need to do it later.
-
-#### bot.sendWebhook()
-| Argument | Description
-|--- |---
-| message | A message object
-| callback | _Optional_ Callback in the form function(err,response) { ... }
-
-Pass `sendWebhook` an object that contains at least a `text` field.
- This object may also contain other fields defined [by Slack](https://api.slack.com/incoming-webhooks) which can alter the
- appearance of your message.
-
-```javascript
-var bot = controller.spawn({
-  incoming_webhook: {
-    url: <my_webhook_url>
-  }
-})
-
-bot.sendWebhook({
-  text: 'This is an incoming webhook',
-  channel: '#general',
-},function(err,res) {
-  if (err) {
-    // ...
-  }
-});
-```
-
-
-### Outgoing Webhooks and Slash commands
-
-Outgoing webhooks and Slash commands allow you to send data out of Slack.
-
-Outgoing webhooks are used to match keywords or phrases in Slack. [Read Slack's official documentation here.](https://api.slack.com/outgoing-webhooks)
-
-Slash commands are special commands triggered by typing a "/" then a command.
-[Read Slack's official documentation here.](https://api.slack.com/slash-commands)
-
-Though these integrations are subtly different, Botkit normalizes the details
-so developers may focus on providing useful functionality rather than peculiarities
-of the Slack API parameter names.
-
-Note that since these integrations use send webhooks from Slack to your application,
-your application will have to be hosted at a public IP address or domain name,
-and properly configured within Slack.
-
-[Set up an outgoing webhook](https://xoxco.slack.com/services/new/outgoing-webhook)
-
-[Set up a Slash command](https://xoxco.slack.com/services/new/slash-commands)
-
-```javascript
-controller.setupWebserver(port,function(err,express_webserver) {
-  controller.createWebhookEndpoints(express_webserver)
-});
-
-controller.on('slash_command',function(bot,message) {
-
-    // reply to slash command
-    bot.replyPublic(message,'Everyone can see this part of the slash command');
-    bot.replyPrivate(message,'Only the person who used the slash command can see this.');
-
-})
-
-controller.on('outgoing_webhook',function(bot,message) {
-
-    // reply to outgoing webhook command
-    bot.replyPublic(message,'Everyone can see the results of this webhook command');
-
-})
-```
-
-#### controller.setupWebserver()
-| Argument | Description
-|---  |---
-| port | port for webserver
-| callback | callback function
-
-Setup an [Express webserver](http://expressjs.com/en/index.html) for
-use with `createwWebhookEndpoints()`
-
-If you need more than a simple webserver to receive webhooks,
-you should by all means create your own Express webserver!
-
-The callback function receives the Express object as a parameter,
-which may be used to add further web server routes.
-
-#### controller.createWebhookEndpoints()
-
-This function configures the route `http://_your_server_/slack/receive`
-to receive webhooks from Slack.
-
-This url should be used when configuring Slack.
-
-When a slash command is received from Slack, Botkit fires the `slash_command` event.
-
-When an outgoing webhook is recieved from Slack, Botkit fires the `outgoing_webhook` event.
-
-
-#### bot.replyPublic()
-| Argument | Description
-|---  |---
-| src | source message as received from slash or webhook
-| reply | reply message (string or object)
-| callback | optional callback
-
-When used with outgoing webhooks, this function sends an immediate response that is visible to everyone in the channel.
-
-When used with slash commands, this function has the same functionality. However,
-slash commands also support private, and delayed messages. See below.
-[View Slack's docs here](https://api.slack.com/slash-commands)
-
-#### bot.replyPrivate()
-
-| Argument | Description
-|---  |---
-| src | source message as received from slash
-| reply | reply message (string or object)
-| callback | optional callback
-
-
-#### bot.replyPublicDelayed()
-
-| Argument | Description
-|---  |---
-| src | source message as received from slash
-| reply | reply message (string or object)
-| callback | optional callback
-
-#### bot.replyPrivateDelayed()
-
-| Argument | Description
-|---  |---
-| src | source message as received from slash
-| reply | reply message (string or object)
-| callback | optional callback
-
-
-
-### Using the Slack Web API
-
-All (or nearly all - they change constantly!) of Slack's current web api methods are supported
-using a syntax designed to match the endpoints themselves.
-
-If your bot has the appropriate scope, it may call [any of these method](https://api.slack.com/methods) using this syntax:
-
-```javascript
-bot.api.channels.list({},function(err,response) {
-  //Do something...
-})
-```
-
-
-# Advanced Topics
-
-
-## Storing Information
-
-Botkit has a built in storage system used to keep data on behalf of users and teams between sessions. Botkit uses this system automatically when storing information for Slack Button applications (see below).
-
-By default, Botkit will use [json-file-store](https://github.com/flosse/json-file-store) to keep data in JSON files in the filesystem of the computer where the bot is executed. (Note this will not work on Heroku or other hosting systems that do not let node applications write to the file system.) Initialize this system when you create the bot:
-```javascript
-var controller = Botkit.slackbot({
-  json_file_store: 'path_to_json_database'
-});
-```
-
-This system supports freeform storage on a team-by-team, user-by-user, and channel-by-channel basis. Basically ```controller.storage``` is a key value store. All access to this system is through the following nine functions. Example usage:
-```javascript
-controller.storage.users.save({id: message.user, foo:'bar'}, function(err) { ... });
-controller.storage.users.get(id, function(err, user_data) {...});
-controller.storage.users.all(function(err, all_user_data) {...});
-
-controller.storage.channels.save({id: message.channel, foo:'bar'}, function(err) { ... });
-controller.storage.channels.get(id, function(err, channel_data) {...});
-controller.storage.channels.all(function(err, all_channel_data) {...});
-
-controller.storage.teams.save({id: message.team, foo:'bar'}, function(err) { ... });
-controller.storage.teams.get(id, function(err, team_data) {...});
-controller.storage.teams.all(function(err, all_team_data) {...});
-```
-
-Note that save must be passed an object with an id. It is recommended to use the team/user/channel id for this purpose.
-```[user/channel/team]_data``` will always be an object while ```all_[user/channel/team]_data``` will always be a list of objects.
-
-### Writing your own storage module
-
-If you want to use a database or do something else with your data,
-you can write your own storage module and pass it in.
-
-Make sure your module returns an object with all the methods. See [simple_storage.js](https://github.com/howdyai/botkit/blob/master/lib/storage/simple_storage.js) for an example of how it is done!
-Make sure your module passes the test in [storage_test.js](https://github.com/howdyai/botkit/blob/master/lib/storage/storage_test.js).
-
-Then, use it when you create your bot:
-```javascript
-var controller = Botkit.slackbot({
-  storage: my_storage_provider
-})
-```
-
-### Writing your own logging module
-
-By default, your bot will log to the standard JavaScript `console` object
-available in Node.js. This will synchronously print logging messages to stdout
-of the running process.
-
-There may be some cases, such as remote debugging or rotating of large logs,
-where you may want a more sophisticated logging solution. You can write your
-own logging module that uses a third-party tool, like
-[winston](https://github.com/winstonjs/winston) or
-[Bristol](https://github.com/TomFrost/Bristol). Just create an object with a
-`log` method. That method should take a severity level (such as `'error'` or
-`'debug'`) as its first argument, and then any number of other arguments that
-will be logged as messages. (Both Winston and Bristol create objects of this
-description; it's a common interface.)
-
-Then, use it when you create your bot:
-```javascript
-var controller = Botkit.slackbot({
-  logger: new winston.Logger({
-    transports: [
-      new (winston.transports.Console)(),
-      new (winston.transports.File)({ filename: './bot.log' })
-    ]
-  })
-});
-```
-
-## Use the Slack Button
-
-The [Slack Button](https://api.slack.com/docs/slack-button) is a way to offer a Slack
-integration as a service available to multiple teams. Botkit includes a framework
-on top of which Slack Button applications can be built.
-
-Slack button applications can use one or more of the [real time API](),
-[incoming webhook]() and [slash command]() integrations, which can be
-added *automatically* to a team using a special oauth scope.
-
-If special oauth scopes sounds scary, this is probably not for you!
-The Slack Button is useful for developers who want to offer a service
-to multiple teams.
-
-How many teams can a Slack button app built using Botkit handle?
-This will largely be dependent on the environment it is hosted in and the
-type of integrations used.  A reasonably well equipped host server should
-be able to easily handle _at least one hundred_ real time connections at once.
-
-To handle more than one hundred bots at once, [consider speaking to the
-creators of Botkit at Howdy.ai](http://howdy.ai)
-
-For Slack button applications, Botkit provides:
-
-* A simple webserver
-* OAuth Endpoints for login via Slack
-* Storage of API tokens and team data via built-in Storage
-* Events for when a team joins, a new integration is added, and others...
-
-See the [included examples](#included-examples) for several ready to use example apps.
-
-#### controller.configureSlackApp()
-
-| Argument | Description
-|---  |---
-| config | configuration object containing clientId, clientSecret, redirectUri and scopes
-
-Configure Botkit to work with a Slack application.
-
-Get a clientId and clientSecret from [Slack's API site](https://api.slack.com/applications).
-Configure Slash command, incoming webhook, or bot user integrations on this site as well.
-
-Configuration must include:
-
-* clientId - Application clientId from Slack
-* clientSecret - Application clientSecret from Slack
-* redirectUri - the base url of your application
-* scopes - an array of oauth permission scopes
-
-Slack has [_many, many_ oauth scopes](https://api.slack.com/docs/oauth-scopes)
-that can be combined in different ways. There are also [_special oauth scopes_
-used when requesting Slack Button integrations](https://api.slack.com/docs/slack-button).
-It is important to understand which scopes your application will need to function,
-as without the proper permission, your API calls will fail.
-
-#### controller.createOauthEndpoints()
-| Argument | Description
-|---  |---
-| webserver | an Express webserver Object
-| error_callback | function to handle errors that may occur during oauth
-
-Call this function to create two web urls that handle login via Slack.
-Once called, the resulting webserver will have two new routes: `http://_your_server_/login` and `http://_your_server_/oauth`. The second url will be used when configuring
-the "Redirect URI" field of your application on Slack's API site.
-
-
-```javascript
-var Botkit = require('botkit');
-var controller = Botkit.slackbot();
-
-controller.configureSlackApp({
-  clientId: process.env.clientId,
-  clientSecret: process.env.clientSecret,
-  redirectUri: 'http://localhost:3002',
-  scopes: ['incoming-webhook','team:read','users:read','channels:read','im:read','im:write','groups:read','emoji:read','chat:write:bot']
-});
-
-controller.setupWebserver(process.env.port,function(err,webserver) {
-
-  // set up web endpoints for oauth, receiving webhooks, etc.
-  controller
-    .createHomepageEndpoint(controller.webserver)
-    .createOauthEndpoints(controller.webserver,function(err,req,res) { ... })
-    .createWebhookEndpoints(controller.webserver);
-
-});
-
-```
-
-### How to identify what team your message came from
-```javascript
-bot.identifyTeam(function(err,team_id) {
-
-})
-```
-
-
-### How to identify the bot itself (for RTM only)
-```javascript
-bot.identifyBot(function(err,identity) {
-  // identity contains...
-  // {name, id, team_id}
-})
-```
-
-
-### Slack Button specific events:
-
-| Event | Description
-|--- |---
-| create_incoming_webhook |
-| create_bot |
-| update_team |
-| create_team |
-| create_user |
-| update_user |
-| oauth_error |
-
-##Use BotKit with an Express web server
-Instead of controller.setupWebserver(), it is possible to use a different web server to manage authentication flows, as well as serving web pages.
-
-Here is an example of [using an Express web server alongside BotKit](https://github.com/mvaragnat/botkit-express-demo).
-
-# Chat with us at dev4slack.slack.com
-You can get an invite here: http://dev4slack.xoxco.com/.
+## Documentation
+
+* [Get Started](docs/readme.md)
+* [Botkit Studio API](docs/readme-studio.md)
+* [Function index](docs/readme.md#developing-with-botkit)
+* [Extending Botkit with Plugins and Middleware](docs/middleware.md)
+  * [Message Pipeline](docs/readme-pipeline.md)
+  * [List of current plugins](docs/readme-middlewares.md)
+* [Storing Information](docs/storage.md)
+* [Logging](docs/logging.md)
+* Platforms
+  * [Slack](docs/readme-slack.md)
+  * [Cisco Spark](docs/readme-ciscospark.md)
+  * [Microsoft Teams](docs/readme-teams.md)
+  * [Facebook Messenger](docs/readme-facebook.md)
+  * [Twilio SMS](docs/readme-twiliosms.md)
+  * [Twilio IPM](docs/readme-twilioipm.md)
+  * [Microsoft Bot Framework](docs/readme-botframework.md)
+* Contributing to Botkit
+  * [Contributing to Botkit Core](CONTRIBUTING.md)
+  * [Building Middleware/plugins](docs/howto/build_middleware.md)
+  * [Building platform connectors](docs/howto/build_connector.md)
+
+# About Botkit
+
+Botkit is a product of [Howdy](https://howdy.ai).
+
+For support, check out [the Developer Community](#developer--support-community) and find our team in the #Botkit channel.

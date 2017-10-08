@@ -1,12 +1,20 @@
 /**
  * This is a module that makes a bot
- * It expects to receive messages via the botkit.receiveMessage function
- * These messages are expected to match Slack's message format.
+ * It expects to receive messages via the botkit.ingest function
  **/
 var mustache = require('mustache');
 var simple_storage = require(__dirname + '/storage/simple_storage.js');
 var ConsoleLogger = require(__dirname + '/console_logger.js');
 var LogLevels = ConsoleLogger.LogLevels;
+var ware = require('ware');
+var clone = require('clone');
+var fs = require('fs');
+var studio = require('./Studio.js');
+var os = require('os');
+var async = require('async');
+var PKG_VERSION = require('../package.json').version;
+var express = require('express');
+var bodyParser = require('body-parser');
 
 function Botkit(configuration) {
     var botkit = {
@@ -15,6 +23,8 @@ function Botkit(configuration) {
         tasks: [],
         taskCount: 0,
         convoCount: 0,
+        my_version: null,
+        my_user_agent: null,
         memory_store: {
             users: {},
             channels: {},
@@ -22,10 +32,98 @@ function Botkit(configuration) {
         }
     };
 
+    /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+
+    // TODO: externalize this into some sort of utterances.json file
     botkit.utterances = {
         yes: new RegExp(/^(yes|yea|yup|yep|ya|sure|ok|y|yeah|yah)/i),
         no: new RegExp(/^(no|nah|nope|n)/i),
+        quit: new RegExp(/^(quit|cancel|end|stop|done|exit|nevermind|never mind)/i)
     };
+
+    /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+
+    // define some middleware points where custom functions
+    // can plug into key points of botkits process
+    botkit.middleware = {
+        spawn: ware(),
+        ingest: ware(),
+        normalize: ware(),
+        categorize: ware(),
+        receive: ware(),
+        heard: ware(), // best place for heavy i/o because fewer messages
+        capture: ware(),
+        format: ware(),
+        send: ware(),
+    };
+
+
+    botkit.ingest = function(bot, payload, source) {
+
+        // keep an unmodified copy of the message
+        payload.raw_message = clone(payload);
+
+        payload._pipeline = {
+            stage: 'ingest',
+        };
+
+
+        botkit.middleware.ingest.run(bot, payload, source, function(err, bot, payload, source) {
+            if (err) {
+                console.error('An error occured in the ingest middleware: ', err);
+                return;
+            }
+            botkit.normalize(bot, payload);
+        });
+    };
+
+    botkit.normalize = function(bot, payload) {
+        payload._pipeline.stage = 'normalize';
+        botkit.middleware.normalize.run(bot, payload, function(err, bot, message) {
+            if (err) {
+                console.error('An error occured in the normalize middleware: ', err);
+                return;
+            }
+
+            if (!message.type) {
+                message.type = 'message_received';
+            }
+            botkit.categorize(bot, message);
+        });
+    };
+
+    botkit.categorize = function(bot, message) {
+        message._pipeline.stage = 'categorize';
+        botkit.middleware.categorize.run(bot, message, function(err, bot, message) {
+            if (err) {
+                console.error('An error occured in the categorize middleware: ', err);
+                return;
+            }
+
+            botkit.receiveMessage(bot, message);
+        });
+    };
+
+    botkit.receiveMessage = function(bot, message) {
+        message._pipeline.stage = 'receive';
+        botkit.middleware.receive.run(bot, message, function(err, bot, message) {
+            if (err) {
+                console.error('An error occured in the receive middleware: ', err);
+                return;
+            } else {
+                botkit.debug('RECEIVED MESSAGE');
+                bot.findConversation(message, function(convo) {
+                    if (convo) {
+                        convo.handle(message);
+                    } else {
+                        botkit.trigger(message.type, [bot, message]);
+                    }
+                });
+            }
+        });
+    };
+
+    /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
     function Conversation(task, message) {
 
@@ -33,12 +131,18 @@ function Botkit(configuration) {
         this.sent = [];
         this.transcript = [];
 
+        this.context = {
+            user: message.user,
+            channel: message.channel,
+            bot: task.bot,
+        };
+
         this.events = {};
 
         this.vars = {};
 
-        this.topics = {};
-        this.topic = null;
+        this.threads = {};
+        this.thread = null;
 
         this.status = 'new';
         this.task = task;
@@ -48,67 +152,109 @@ function Botkit(configuration) {
         this.capture_options = {};
         this.startTime = new Date();
         this.lastActive = new Date();
+        /** will be pointing to a callback which will be called after timeout,
+         * conversation will be not be ended and should be taken care by callback
+         */
+        this.timeOutHandler = null;
 
-        this.capture = function(response) {
+        this.collectResponse = function(key, value) {
+            this.responses[key] = value;
+        };
+
+        this.capture = function(response, cb) {
+
+            var that = this;
             var capture_key = this.sent[this.sent.length - 1].text;
-
-            if (this.capture_options.key) {
-                capture_key = this.capture_options.key;
-            }
-
-            if (this.capture_options.multiple) {
-                if (!this.responses[capture_key]) {
-                    this.responses[capture_key] = [];
+            botkit.middleware.capture.run(that.task.bot, response, that, function(err, bot, response, convo) {
+                if (response.text) {
+                    response.text = response.text.trim();
+                } else {
+                    response.text = '';
                 }
-                this.responses[capture_key].push(response);
-            } else {
-                this.responses[capture_key] = response;
-            }
+
+                if (that.capture_options.key != undefined) {
+                    capture_key = that.capture_options.key;
+                }
+
+                // capture the question that was asked
+                // if text is an array, get 1st
+                if (typeof(that.sent[that.sent.length - 1].text) == 'string') {
+                    response.question = that.sent[that.sent.length - 1].text;
+                } else if (Array.isArray(that.sent[that.sent.length - 1].text)) {
+                    response.question = that.sent[that.sent.length - 1].text[0];
+                } else {
+                    response.question = '';
+                }
+
+                if (that.capture_options.multiple) {
+                    if (!that.responses[capture_key]) {
+                        that.responses[capture_key] = [];
+                    }
+                    that.responses[capture_key].push(response);
+                } else {
+                    that.responses[capture_key] = response;
+                }
+
+                if (cb) cb(response);
+            });
 
         };
 
         this.handle = function(message) {
 
+            var that = this;
             this.lastActive = new Date();
             this.transcript.push(message);
             botkit.debug('HANDLING MESSAGE IN CONVO', message);
             // do other stuff like call custom callbacks
             if (this.handler) {
-                this.capture(message);
-
-                // if the handler is a normal function, just execute it!
-                // NOTE: anyone who passes in their own handler has to call
-                // convo.next() to continue after completing whatever it is they want to do.
-                if (typeof(this.handler) == 'function') {
-                    this.handler(message, this);
-                } else {
-                    // handle might be a mapping of keyword to callback.
-                    // lets see if the message matches any of the keywords
-                    var match, patterns = this.handler;
-                    for (var p = 0; p < patterns.length; p++) {
-                        if (patterns[p].pattern && (match = message.text.match(patterns[p].pattern))) {
-                            message.match = match;
-                            patterns[p].callback(message, this);
-                            return;
+                this.capture(message, function(message) {
+                    // if the handler is a normal function, just execute it!
+                    // NOTE: anyone who passes in their own handler has to call
+                    // convo.next() to continue after completing whatever it is they want to do.
+                    if (typeof(that.handler) == 'function') {
+                        that.handler(message, that);
+                    } else {
+                        // handle might be a mapping of keyword to callback.
+                        // lets see if the message matches any of the keywords
+                        var match, patterns = that.handler;
+                        for (var p = 0; p < patterns.length; p++) {
+                            if (patterns[p].pattern && botkit.hears_test([patterns[p].pattern], message)) {
+                                botkit.middleware.heard.run(that.task.bot, message, function(err, bot, message) {
+                                    patterns[p].callback(message, that);
+                                });
+                                return;
+                            }
                         }
-                    }
 
-                    // none of the messages matched! What do we do?
-                    // if a default exists, fire it!
-                    for (var p = 0; p < patterns.length; p++) {
-                        if (patterns[p].default) {
-                            patterns[p].callback(message, this);
-                            return;
+                        // none of the messages matched! What do we do?
+                        // if a default exists, fire it!
+                        for (var p = 0; p < patterns.length; p++) {
+                            if (patterns[p].default) {
+                                botkit.middleware.heard.run(that.task.bot, message, function(err, bot, message) {
+                                    patterns[p].callback(message, that);
+                                });
+                                return;
+                            }
                         }
-                    }
 
-                }
+                    }
+                });
             } else {
                 // do nothing
             }
         };
 
+        this.setVar = function(field, value) {
+            if (!this.vars) {
+                this.vars = {};
+            }
+            this.vars[field] = value;
+        };
+
         this.activate = function() {
+            this.task.trigger('conversationStarted', [this]);
+            this.task.botkit.trigger('conversationStarted', [this.task.bot, this]);
             this.status = 'active';
         };
 
@@ -162,7 +308,6 @@ function Botkit(configuration) {
                     }
                 }
             } else {
-                botkit.debug('No handler for', event);
             }
         };
 
@@ -183,7 +328,7 @@ function Botkit(configuration) {
             return;
         };
 
-        this.addQuestion = function(message, cb, capture_options, topic) {
+        this.addQuestion = function(message, cb, capture_options, thread) {
             if (typeof(message) == 'string') {
                 message = {
                     text: message,
@@ -198,17 +343,17 @@ function Botkit(configuration) {
             }
 
             message.handler = cb;
-            this.addMessage(message, topic);
+            this.addMessage(message, thread);
         };
 
 
         this.ask = function(message, cb, capture_options) {
-            this.addQuestion(message, cb, capture_options, this.topic || 'default');
+            this.addQuestion(message, cb, capture_options, this.thread || 'default');
         };
 
-        this.addMessage = function(message, topic) {
-            if (!topic) {
-                topic = this.topic;
+        this.addMessage = function(message, thread) {
+            if (!thread) {
+                thread = this.thread;
             }
             if (typeof(message) == 'string') {
                 message = {
@@ -219,29 +364,123 @@ function Botkit(configuration) {
                 message.channel = this.source_message.channel;
             }
 
-            if (!this.topics[topic]) {
-                this.topics[topic] = [];
+            if (!this.threads[thread]) {
+                this.threads[thread] = [];
             }
-            this.topics[topic].push(message);
+            this.threads[thread].push(message);
 
             // this is the current topic, so add it here as well
-            if (this.topic == topic) {
+            if (this.thread == thread) {
                 this.messages.push(message);
             }
         };
 
+        // how long should the bot wait while a user answers?
+        this.setTimeout = function(timeout) {
+            this.task.timeLimit = timeout;
+        };
+
+        // For backwards compatibility, wrap gotoThread in its previous name
         this.changeTopic = function(topic) {
-            this.topic = topic;
+            this.gotoThread(topic);
+        };
 
-            if (!this.topics[topic]) {
-                this.topics[topic] = [];
+        this.hasThread = function(thread) {
+            return (this.threads[thread] != undefined);
+        };
+
+
+        this.transitionTo = function(thread, message) {
+
+            // add a new transition thread
+            // add this new message to it
+            // set that message action to execute the actual transition
+            // then change threads to transition thread
+
+            var num = 1;
+            while (this.hasThread('transition_' + num)) {
+                num++;
             }
-            this.messages = this.topics[topic].slice();
 
-            this.handler = null;
+            var threadname = 'transition_' + num;
+
+            if (typeof(message) == 'string') {
+                message = {
+                    text: message,
+                    action: thread
+                };
+            } else {
+                message.action = thread;
+            }
+
+            this.addMessage(message, threadname);
+
+            this.gotoThread(threadname);
+
+        };
+
+        this.beforeThread = function(thread, callback) {
+            if (!this.before_hooks) {
+                this.before_hooks = {};
+            }
+
+            if (!this.before_hooks[thread]) {
+                this.before_hooks[thread] = [];
+            }
+            this.before_hooks[thread].push(callback);
+        };
+
+        this.gotoThread = function(thread) {
+            var that = this;
+            that.next_thread = thread;
+            that.processing = true;
+
+            var makeChange = function() {
+                if (!that.hasThread(that.next_thread)) {
+                    if (that.next_thread == 'default') {
+                        that.threads[that.next_thread] = [];
+                    } else {
+                        botkit.debug('WARN: gotoThread() to an invalid thread!', thread);
+                        that.stop('unknown_thread');
+                        return;
+                    }
+                }
+
+                that.thread = that.next_thread;
+                that.messages = that.threads[that.next_thread].slice();
+
+                that.handler = null;
+                that.processing = false;
+            };
+
+            if (that.before_hooks && that.before_hooks[that.next_thread]) {
+
+                // call any beforeThread hooks in sequence
+                async.eachSeries(this.before_hooks[that.next_thread], function(before_hook, next) {
+                    before_hook(that, next);
+                }, function(err) {
+                    if (!err) {
+                        makeChange();
+                    }
+                });
+
+            } else {
+
+                makeChange();
+
+            }
+
         };
 
         this.combineMessages = function(messages) {
+            if (!messages) {
+                return '';
+            }
+
+            if (Array.isArray(messages) && !messages.length) {
+                return '';
+            }
+
             if (messages.length > 1) {
                 var txt = [];
                 var last_user = null;
@@ -273,6 +512,37 @@ function Botkit(configuration) {
             }
         };
 
+        this.getResponses = function() {
+
+            var res = {};
+            for (var key in this.responses) {
+
+                res[key] = {
+                    question: this.responses[key].length ?
+                     this.responses[key][0].question : this.responses[key].question,
+                    key: key,
+                    answer: this.extractResponse(key),
+                };
+            }
+            return res;
+        };
+
+        this.getResponsesAsArray = function() {
+
+            var res = [];
+            for (var key in this.responses) {
+
+                res.push({
+                    question: this.responses[key].length ?
+                     this.responses[key][0].question : this.responses[key].question,
+                    key: key,
+                    answer: this.extractResponse(key),
+                });
+            }
+            return res;
+        };
+
+
         this.extractResponses = function() {
 
             var res = {};
@@ -286,6 +556,32 @@ function Botkit(configuration) {
             return this.combineMessages(this.responses[key]);
         };
 
+        this.replaceAttachmentTokens = function(attachments) {
+
+            if (attachments && attachments.length) {
+                for (var a = 0; a < attachments.length; a++) {
+                    for (var key in attachments[a]) {
+                        if (typeof(attachments[a][key]) == 'string') {
+                            attachments[a][key] = this.replaceTokens(attachments[a][key]);
+                        } else {
+                            attachments[a][key] = this.replaceAttachmentTokens(attachments[a][key]);
+                        }
+                    }
+                }
+            } else {
+                for (var a in attachments) {
+                    if (typeof(attachments[a]) == 'string') {
+                        attachments[a] = this.replaceTokens(attachments[a]);
+                    } else {
+                        attachments[a] = this.replaceAttachmentTokens(attachments[a]);
+                    }
+                }
+            }
+
+            return attachments;
+        };
+
+
         this.replaceTokens = function(text) {
 
             var vars = {
@@ -294,22 +590,102 @@ function Botkit(configuration) {
                 origin: this.task.source_message,
                 vars: this.vars,
             };
-            return mustache.render(text, vars);
+
+            var rendered = '';
+
+            try {
+                rendered = mustache.render(text, vars);
+            } catch (err) {
+                botkit.log('Error in message template. Mustache failed with error: ', err);
+                rendered = text;
+            };
+
+            return rendered;
         };
 
         this.stop = function(status) {
             this.handler = null;
             this.messages = [];
             this.status = status || 'stopped';
-            botkit.debug('Conversation is over!');
+            botkit.debug('Conversation is over with status ' + this.status);
             this.task.conversationEnded(this);
+        };
+
+        // was this conversation successful?
+        // return true if it was completed
+        // otherwise, return false
+        // false could indicate a variety of failed states:
+        // manually stopped, timed out, etc
+        this.successful = function() {
+
+            // if the conversation is still going, it can't be successful yet
+            if (this.isActive()) {
+                return false;
+            }
+
+            if (this.status == 'completed') {
+                return true;
+            } else {
+                return false;
+            }
+
+        };
+
+        this.cloneMessage = function(message) {
+            // clone this object so as not to modify source
+            var outbound = clone(message);
+
+            if (typeof(message.text) == 'string') {
+                outbound.text = this.replaceTokens(message.text);
+            } else if (message.text) {
+                outbound.text = this.replaceTokens(
+                    message.text[Math.floor(Math.random() * message.text.length)]
+                );
+            }
+
+            if (outbound.attachments) {
+                outbound.attachments = this.replaceAttachmentTokens(outbound.attachments);
+            }
+
+            if (outbound.attachment) {
+
+                // pick one variation of the message text at random
+                if (outbound.attachment.payload.text && typeof(outbound.attachment.payload.text) != 'string') {
+                    outbound.attachment.payload.text = this.replaceTokens(
+                        outbound.attachment.payload.text[
+                            Math.floor(Math.random() * outbound.attachment.payload.text.length)
+                        ]
+                    );
+                }
+                outbound.attachment = this.replaceAttachmentTokens([outbound.attachment])[0];
+            }
+
+            if (this.messages.length && !message.handler) {
+                outbound.continue_typing = true;
+            }
+
+            if (typeof(message.attachments) == 'function') {
+                outbound.attachments = message.attachments(this);
+            }
+
+            return outbound;
+        };
+
+        this.onTimeout = function(handler) {
+            if (typeof(handler) == 'function') {
+                this.timeOutHandler = handler;
+            } else {
+                botkit.debug('Invalid timeout function passed to onTimeout');
+            }
         };
 
         this.tick = function() {
             var now = new Date();
 
             if (this.isActive()) {
-                if (this.handler) {
+                if (this.processing) {
+                    // do nothing. The bot is waiting for async process to complete.
+                } else if (this.handler) {
                     // check timeout!
                     // how long since task started?
                     var duration = (now.getTime() - this.task.startTime.getTime());
@@ -318,12 +694,15 @@ function Botkit(configuration) {
 
                     if (this.task.timeLimit && // has a timelimit
                         (duration > this.task.timeLimit) && // timelimit is up
-                        (lastActive > (60 * 1000)) // nobody has typed for 60 seconds at least
+                        (lastActive > this.task.timeLimit) // nobody has typed for 60 seconds at least
                     ) {
-
-                        if (this.topics.timeout) {
+                        // if timeoutHandler is set then call it, otherwise follow the normal flow
+                        // this will not break others code, after the update
+                        if (this.timeOutHandler) {
+                            this.timeOutHandler(this);
+                        } else if (this.hasThread('on_timeout')) {
                             this.status = 'ending';
-                            this.changeTopic('timeout');
+                            this.gotoThread('on_timeout');
                         } else {
                             this.stop('timeout');
                         }
@@ -331,6 +710,20 @@ function Botkit(configuration) {
                     // otherwise do nothing
                 } else {
                     if (this.messages.length) {
+
+                        if (this.sent.length &&
+                            !this.sent[this.sent.length - 1].sent
+                        ) {
+                            return;
+                        }
+
+                        if (this.task.bot.botkit.config.require_delivery &&
+                            this.sent.length &&
+                            !this.sent[this.sent.length - 1].delivered
+                        ) {
+                            return;
+                        }
+
                         if (typeof(this.messages[0].timestamp) == 'undefined' ||
                             this.messages[0].timestamp <= now.getTime()) {
                             var message = this.messages.shift();
@@ -352,28 +745,51 @@ function Botkit(configuration) {
                                 this.capture_options = {};
                             }
 
-                            this.sent.push(message);
-                            this.transcript.push(message);
                             this.lastActive = new Date();
 
-                            if (message.text || message.attachments) {
-                                message.text = message.text && this.replaceTokens(message.text) || '';
-                                if (this.messages.length && !message.handler) {
-                                    message.continue_typing = true;
-                                }
+                            // is there any text?
+                            // or an attachment? (facebook)
+                            // or multiple attachments (slack)
+                            if (message.text || message.attachments || message.attachment) {
 
-                                if (typeof(message.attachments) == 'function') {
-                                    message.attachments = message.attachments(this);
-                                }
+                                var outbound = this.cloneMessage(message);
+                                var that = this;
 
-                                this.task.bot.say(message, function(err) {
+                                outbound.sent_timestamp = new Date().getTime();
+
+                                that.sent.push(outbound);
+                                that.transcript.push(outbound);
+
+                                this.task.bot.reply(this.source_message, outbound, function(err, sent_message) {
                                     if (err) {
                                         botkit.log('An error occurred while sending a message: ', err);
+
+                                        // even though an error occured, set sent to true
+                                        // this will allow the conversation to keep going even if one message fails
+                                        // TODO: make a message that fails to send _resend_ at least once
+                                        that.sent[that.sent.length - 1].sent = true;
+                                        that.sent[that.sent.length - 1].api_response = err;
+
+                                    } else {
+
+                                        that.sent[that.sent.length - 1].sent = true;
+                                        that.sent[that.sent.length - 1].api_response = sent_message;
+
+                                        // if sending via slack's web api, there is no further confirmation
+                                        // so we can mark the message delivered
+                                        if (that.task.bot.type == 'slack' && sent_message && sent_message.ts) {
+                                            that.sent[that.sent.length - 1].delivered = true;
+                                        }
+
+                                        that.trigger('sent', [sent_message]);
+
                                     }
                                 });
                             }
                             if (message.action) {
-                                if (message.action == 'repeat') {
+                                if (typeof(message.action) == 'function') {
+                                    message.action(this);
+                                } else if (message.action == 'repeat') {
                                     this.repeat();
                                 } else if (message.action == 'wait') {
                                     this.silentRepeat();
@@ -381,8 +797,8 @@ function Botkit(configuration) {
                                     this.stop();
                                 } else if (message.action == 'timeout') {
                                     this.stop('timeout');
-                                } else if (this.topics[message.action]) {
-                                    this.changeTopic(message.action);
+                                } else if (this.threads[message.action]) {
+                                    this.gotoThread(message.action);
                                 }
                             }
                         } else {
@@ -391,24 +807,22 @@ function Botkit(configuration) {
 
                         // end immediately instad of waiting til next tick.
                         // if it hasn't already been ended by a message action!
-                        if (this.isActive() && !this.messages.length && !this.handler) {
-                            this.status = 'completed';
-                            botkit.debug('Conversation is over!');
-                            this.task.conversationEnded(this);
+                        if (this.isActive() && !this.messages.length && !this.handler && !this.processing) {
+                            this.stop('completed');
                         }
 
                     } else if (this.sent.length) { // sent at least 1 message
-                        this.status = 'completed';
-                        botkit.debug('Conversation is over!');
-                        this.task.conversationEnded(this);
+                        this.stop('completed');
                     }
                 }
             }
         };
 
         botkit.debug('CREATED A CONVO FOR', this.source_message.user, this.source_message.channel);
-        this.changeTopic('default');
+        this.gotoThread('default');
     };
+
+    /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
     function Task(bot, message, botkit) {
 
@@ -425,15 +839,19 @@ function Botkit(configuration) {
             return this.status == 'active';
         };
 
-        this.startConversation = function(message) {
+        this.createConversation = function(message) {
             var convo = new Conversation(this, message);
             convo.id = botkit.convoCount++;
+            this.convos.push(convo);
+            return convo;
+        };
 
+        this.startConversation = function(message) {
+
+            var convo = this.createConversation(message);
             botkit.log('>   [Start] ', convo.id, ' Conversation with ', message.user, 'in', message.channel);
 
             convo.activate();
-            this.convos.push(convo);
-            this.trigger('conversationStarted', [convo]);
             return convo;
         };
 
@@ -441,6 +859,7 @@ function Botkit(configuration) {
             botkit.log('>   [End] ', convo.id, ' Conversation with ',
                        convo.source_message.user, 'in', convo.source_message.channel);
             this.trigger('conversationEnded', [convo]);
+            this.botkit.trigger('conversationEnded', [bot, convo]);
             convo.trigger('end', [convo]);
             var actives = 0;
             for (var c = 0; c < this.convos.length; c++) {
@@ -450,6 +869,16 @@ function Botkit(configuration) {
             }
             if (actives == 0) {
                 this.taskEnded();
+            }
+
+        };
+
+        this.endImmediately = function(reason) {
+
+            for (var c = 0; c < this.convos.length; c++) {
+                if (this.convos[c].isActive()) {
+                    this.convos[c].stop(reason || 'stopped');
+                }
             }
 
         };
@@ -483,8 +912,6 @@ function Botkit(configuration) {
                         return;
                     }
                 }
-            } else {
-                botkit.debug('No handler for', event);
             }
         };
 
@@ -535,6 +962,8 @@ function Botkit(configuration) {
             }
         };
     };
+
+    /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
     botkit.storage = {
         teams: {
@@ -590,52 +1019,95 @@ function Botkit(configuration) {
         }
     };
 
-    botkit.debug = function() {
-        if (configuration.debug) {
-            var args = [];
-            for (var k = 0; k < arguments.length; k++) {
-                args.push(arguments[k]);
+    /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+
+
+    /**
+     * hears_regexp - default string matcher uses regular expressions
+     *
+     * @param  {array}  tests    patterns to match
+     * @param  {object} message message object with various fields
+     * @return {boolean}        whether or not a pattern was matched
+     */
+    botkit.hears_regexp = function(tests, message) {
+        for (var t = 0; t < tests.length; t++) {
+            if (message.text) {
+
+                // the pattern might be a string to match (including regular expression syntax)
+                // or it might be a prebuilt regular expression
+                var test = null;
+                if (typeof(tests[t]) == 'string') {
+                    try {
+                        test = new RegExp(tests[t], 'i');
+                    } catch (err) {
+                        botkit.log('Error in regular expression: ' + tests[t] + ': ' + err);
+                        return false;
+                    }
+                    if (!test) {
+                        return false;
+                    }
+                } else {
+                    test = tests[t];
+                }
+
+                if (match = message.text.match(test)) {
+                    message.match = match;
+                    return true;
+                }
             }
-            console.log.apply(null, args);
         }
+        return false;
     };
 
-    botkit.log = function() {
-        if (configuration.log || configuration.log === undefined) { //default to true
-            var args = [];
-            for (var k = 0; k < arguments.length; k++) {
-                args.push(arguments[k]);
-            }
-            console.log.apply(null, args);
-        }
+
+    /**
+     * changeEars - change the default matching function
+     *
+     * @param  {function} new_test a function that accepts (tests, message) and returns a boolean
+     */
+    botkit.changeEars = function(new_test) {
+        botkit.hears_test = new_test;
     };
 
-    botkit.hears = function(keywords, events, cb) {
+
+    botkit.hears = function(keywords, events, middleware_or_cb, cb) {
+
+        // the third parameter is EITHER a callback handler
+        // or a middleware function that redefines how the hear works
+        var test_function = botkit.hears_test;
+        if (cb) {
+            test_function = middleware_or_cb;
+        } else {
+            cb = middleware_or_cb;
+        }
+
         if (typeof(keywords) == 'string') {
             keywords = [keywords];
         }
-        if (typeof(events) == 'string') {
-            events = events.split(/\,/g);
+
+        if (keywords instanceof RegExp) {
+            keywords = [keywords];
         }
 
-        var match;
-        for (var k = 0; k < keywords.length; k++) {
-            var keyword = keywords[k];
-            for (var e = 0; e < events.length; e++) {
-                (function(keyword) {
-                    botkit.on(events[e], function(bot, message) {
-                        if (message.text) {
-                            if (match = message.text.match(new RegExp(keyword, 'i'))) {
-                                botkit.debug('I HEARD', keyword);
-                                message.match = match;
-                                cb.apply(this, [bot, message]);
-                                return false;
-                            }
-                        }
-                    });
-                })(keyword);
-            }
+        if (typeof(events) == 'string') {
+            events = events.split(/\,/g).map(function(str) { return str.trim(); });
         }
+
+        for (var e = 0; e < events.length; e++) {
+            (function(keywords, test_function) {
+                botkit.on(events[e], function(bot, message) {
+                    if (test_function && test_function(keywords, message)) {
+                        botkit.debug('I HEARD', keywords);
+                        botkit.middleware.heard.run(bot, message, function(err, bot, message) {
+                            cb.apply(this, [bot, message]);
+                            botkit.trigger('heard_trigger', [bot, keywords, message]);
+                        });
+                        return false;
+                    }
+                });
+            })(keywords, test_function);
+        }
+
         return this;
     };
 
@@ -660,8 +1132,6 @@ function Botkit(configuration) {
                     return;
                 }
             }
-        } else {
-            botkit.debug('No handler for', event);
         }
     };
 
@@ -669,6 +1139,20 @@ function Botkit(configuration) {
         botkit.startTask(bot, message, function(task, convo) {
             cb(null, convo);
         });
+    };
+
+    botkit.createConversation = function(bot, message, cb) {
+
+        var task = new Task(bot, message, this);
+
+        task.id = botkit.taskCount++;
+
+        var convo = task.createConversation(message);
+
+        this.tasks.push(task);
+
+        cb(null, convo);
+
     };
 
     botkit.defineBot = function(unit) {
@@ -679,8 +1163,46 @@ function Botkit(configuration) {
     };
 
     botkit.spawn = function(config, cb) {
+
+
         var worker = new this.worker(this, config);
-        if (cb) { cb(worker); }
+        // mutate the worker so that we can call middleware
+        worker.say = function(message, cb) {
+            var platform_message = {};
+            botkit.middleware.send.run(worker, message, function(err, worker, message) {
+                if (err) {
+                    botkit.log('An error occured in the send middleware:: ' + err);
+                } else {
+                    botkit.middleware.format.run(worker, message, platform_message, function(err, worker, message, platform_message) {
+                        if (err) {
+                            botkit.log('An error occured in the format middleware: ' + err);
+                        } else {
+                            worker.send(platform_message, cb);
+                        }
+                    });
+                }
+            });
+        };
+
+        // add platform independent convenience methods
+        worker.startConversation = function(message, cb) {
+            botkit.startConversation(worker, message, cb);
+        };
+
+        worker.createConversation = function(message, cb) {
+            botkit.createConversation(worker, message, cb);
+        };
+
+        botkit.middleware.spawn.run(worker, function(err, worker) {
+            if (err) {
+                botkit.log('Error in middlware.spawn.run: ' + err);
+            } else {
+                botkit.trigger('spawned', [worker]);
+
+                if (cb) { cb(worker); }
+            }
+        });
+
         return worker;
     };
 
@@ -689,7 +1211,7 @@ function Botkit(configuration) {
             // set up a once a second tick to process messages
             botkit.tickInterval = setInterval(function() {
                 botkit.tick();
-            }, 1000);
+            }, 1500);
         }
     };
 
@@ -719,17 +1241,6 @@ function Botkit(configuration) {
 
     };
 
-    botkit.receiveMessage = function(bot, message) {
-        botkit.debug('RECEIVED MESSAGE');
-        bot.findConversation(message, function(convo) {
-            if (convo) {
-                convo.handle(message);
-            } else {
-                botkit.trigger('message_received', [bot, message]);
-            }
-        });
-    };
-
     botkit.tick = function() {
         for (var t = 0; t < botkit.tasks.length; t++) {
             botkit.tasks[t].tick();
@@ -745,6 +1256,39 @@ function Botkit(configuration) {
 
     };
 
+    // Provide a fairly simple Express-based webserver
+    botkit.setupWebserver = function(port, cb) {
+
+        if (!port) {
+            throw new Error('Cannot start webserver without a port');
+        }
+
+        var static_dir =  process.cwd() + '/public';
+
+        if (botkit.config && botkit.config.webserver && botkit.config.webserver.static_dir)
+            static_dir = botkit.config.webserver.static_dir;
+
+        botkit.config.port = port;
+
+        botkit.webserver = express();
+        botkit.webserver.use(bodyParser.json());
+        botkit.webserver.use(bodyParser.urlencoded({ extended: true }));
+        botkit.webserver.use(express.static(static_dir));
+
+        var server = botkit.webserver.listen(
+            botkit.config.port,
+            botkit.config.hostname,
+            function() {
+                botkit.log('** Starting webserver on port ' +
+                    botkit.config.port);
+                if (cb) { cb(null, botkit.webserver); }
+                botkit.trigger('webserver_up', [botkit.webserver]);
+            });
+
+        return botkit;
+    };
+
+    /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
     /**
      * Define a default worker bot. This function should be customized outside
@@ -777,7 +1321,46 @@ function Botkit(configuration) {
         };
     };
 
+    /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+
+    botkit.userAgent = function() {
+
+        if (!botkit.my_user_agent) {
+            // set user agent to Botkit
+            var ua = 'Botkit/' + botkit.version();
+
+            // add OS info
+            ua = ua + ' ' + os.platform() + '/' + os.release();
+
+            // add Node info
+            ua = ua + ' ' + 'node/' + process.version.replace('v', '');
+
+            botkit.my_user_agent = ua;
+        }
+
+        return botkit.my_user_agent;
+
+    };
+
+    botkit.version = function() {
+
+        if (!botkit.my_version) {
+            botkit.my_version = PKG_VERSION;
+        }
+        return botkit.my_version;
+
+    };
+
     botkit.config = configuration;
+
+    /** Default the application to listen to the 0.0.0.0, the default
+      * for node's http module. Developers can specify a hostname or IP
+      * address to override this.
+    **/
+    if (!botkit.config.hostname) {
+        botkit.config.hostname = '0.0.0.0';
+    };
+
 
     if (!configuration.logLevel) {
         if (configuration.debug) {
@@ -807,6 +1390,10 @@ function Botkit(configuration) {
     });
     botkit.debug = botkit.log.debug;
 
+    if (!botkit.config.disable_startup_messages) {
+        console.log('Initializing Botkit v' + botkit.version());
+    }
+
     if (configuration.storage) {
         if (
             configuration.storage.teams &&
@@ -832,6 +1419,12 @@ function Botkit(configuration) {
     } else {
         botkit.log('** No persistent storage method specified! Data may be lost when process shuts down.');
     }
+
+    // set the default set of ears to use the regular expression matching
+    botkit.changeEars(botkit.hears_regexp);
+
+    //enable Botkit Studio
+    studio(botkit);
 
     return botkit;
 }
